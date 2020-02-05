@@ -333,23 +333,32 @@ Class.Analysis.BERAnalysis <- R6Class("Class.Analysis.BERAnalysis",
 			
 		}
 		
+		
+		# Feb 5 2020: sort the basic_data dataframe by BER and create a new sorted_basic_data dataframe
+		sorted_basic_data <- private$tblBER[order(as.double(private$tblBER$average_BER), decreasing = FALSE),];
+		sorted_name <- sorted_basic_data$name;
+		sorted_casn <- sorted_basic_data$casn;
+
+		
 		#Feb 3 2020 - changes BER plot
 		# Plot BER values and flag those above 100K
 				if(label_by == "casn"){
 			private$pltBER <- plot_ly() %>%
-			  add_trace(data = private$tblBER, x = ~casn, y = ~average_BER, type = 'bar', name = 'BER') %>%
-			  add_trace(data = private$tblBER, x = ~casn, y = ~above_BER, type = 'box', name = 'Above 100K') %>%              
-			  layout(title = '',
-					 xaxis = list(title = "Biological Exposure Ratio"),
-					 yaxis = list(title = "Log BER", type = "log"));
+			  add_trace(data = sorted_basic_data , x = ~casn, y = ~average_BER, type = 'bar', name = 'BER') %>%
+			  add_trace(data = sorted_basic_data , x = ~casn, y = ~above_BER, type = 'box', name = 'Above 100K') %>%              
+			  layout(title = 'Biological Exposure Ratios',
+					 xaxis = list(title = "", categoryarray = ~sorted_casn, categoryorder = "array"), # use sorted_casn to plot ordred boxes
+					 yaxis = list(title = "Log BER", type = "log", range = c(-1, 6))); #,
+					 #autosize = T));
 	
 		}else{
 			private$pltBER <- plot_ly() %>%
-			  add_trace(data = private$tblBER, x = ~name, y = ~average_BER, type = 'bar', name = 'BER') %>%
-			  add_trace(data = private$tblBER, x = ~name, y = ~above_BER, type = 'box', name = 'Above 100K') %>%
-			  layout(title = '',
-					 xaxis = list(title = "Biological Exposure Ratio"),
-					 yaxis = list(title = "Log BER", type = "log"));
+			  add_trace(data = sorted_basic_data , x = ~name, y = ~average_BER, type = 'bar', name = 'BER') %>%
+			  add_trace(data = sorted_basic_data , x = ~name, y = ~above_BER, type = 'box', name = 'Above 100K') %>%
+			  layout(title = 'Biological Exposure Ratios',
+					 xaxis = list(title = "", categoryarray = ~sorted_name, categoryorder = "array"), # use sorted_name to plot ordred boxes
+					 yaxis = list(title = "Log BER", type = "log", range = c(-1, 6))); #,
+					 #autosize = T));
 		
 		}
 		
