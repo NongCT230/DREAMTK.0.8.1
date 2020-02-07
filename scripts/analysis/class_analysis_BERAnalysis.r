@@ -303,7 +303,7 @@ Class.Analysis.BERAnalysis <- R6Class("Class.Analysis.BERAnalysis",
     calc_BER_stat_tbl <- self$BERData$getCalcBERStatsTable();
 		chemical_casn_list <- unique(calc_BER_stat_tbl[["casn"]]);
 		Ac50_stat_tbl <- self$basicData$getBasicStatsTable();
-		Ac50_stat_tbl<- filter(Ac50_stat_tbl, above_cutoff == "Y", ac50 >= -2, ac50 <= 10000, cytotoxicity_um > 0.01) %>% drop_na(ac50);
+		Ac50_stat_tbl<- filter(Ac50_stat_tbl, above_cutoff == "Y", ac50 >= -2, ac50 <= 10000, cytotoxicity_um > 0.01) %>% drop_na(ac50) %>% drop_na(oed);
 		
 		for(chemical_casn in chemical_casn_list){
 			
@@ -328,11 +328,11 @@ Class.Analysis.BERAnalysis <- R6Class("Class.Analysis.BERAnalysis",
 			  
 			  private$tblBER <- add_row(private$tblBER, casn = chemical_casn, 
 			                            name = as.character(filter(calc_BER_stat_tbl, casn == chemical_casn) %>% select(name) %>% distinct(name)),
-			                            average_BER = signif(average_BER, digits = 5),  above_BER = above_BER);
+			                            average_BER = signif(average_BER, digits = 5),  above_BER = above_BER) 
 			  
 			
 		}
-		
+		private$tblBER <- private$tblBER %>% drop_na(average_BER);
 		
 		# Feb 5 2020: sort the basic_data dataframe by BER and create a new sorted_basic_data dataframe
 		sorted_basic_data <- private$tblBER[order(as.double(private$tblBER$average_BER), decreasing = FALSE),];
