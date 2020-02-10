@@ -74,6 +74,8 @@ Class.Analysis.BERAnalysis <- R6Class("Class.Analysis.BERAnalysis",
 			
 			theorical_95th_percentile <- quantile(oral_ber,0.95);
 			closest_to_95th <- absolute.min(oral_ber - theorical_95th_percentile) + theorical_95th_percentile ; #gets the closest value to the 95th percentile.
+			min_BER = signif(ifelse(is.nan(min_oed) || is.infinite(min_oed),0,min_ac50 / closest_to_95th), digits = 5);
+			mean_BER = signif(ifelse(is.nan(avg_oed) || is.infinite(avg_oed),0,avg_ac50 / closest_to_95th), digits = 5);
 		
 			
 			#private$tblMeanBER <- add_row(private$tblMeanBER, casn = chemical_casn, 
@@ -83,13 +85,15 @@ Class.Analysis.BERAnalysis <- R6Class("Class.Analysis.BERAnalysis",
 			#                              mean_oed_over_oral_consumer_products_exposure = signif(ifelse(is.nan(avg_oed) || is.infinite(avg_oed),0,avg_ac50 / closest_to_95th), digits = 5));	
 			
 			#November 2019
+			# Feb 2020, remove zeros
+			if (mean_BER != 0){
 			private$tblMeanBER <- add_row(private$tblMeanBER, casn = chemical_casn, 
 						name = as.character(filter(calc_BER_stat_tbl, casn == chemical_casn) %>% select(name) %>% distinct(name)),
 						average_of_oral_consumer_products_exposure = signif(avg_mean, digits = 5), minAC50 = min_ac50, minOED = min_oed,
-						min_oed_over_oral_consumer_products_exposure = signif(ifelse(is.nan(min_oed) || is.infinite(min_oed),0,min_ac50 / closest_to_95th), digits = 5),
-						mean_oed_over_oral_consumer_products_exposure = signif(ifelse(is.nan(avg_oed) || is.infinite(avg_oed),0,avg_ac50 / closest_to_95th), digits = 5),
+						min_oed_over_oral_consumer_products_exposure = min_BER,
+						mean_oed_over_oral_consumer_products_exposure = mean_BER,
 						ac50_95th_percentile_value = signif(ac50_95th_percentile, digits = 5), 
-						oed_95th_percentile_value = signif(oed_95th_percentile, digits = 5));
+						oed_95th_percentile_value = signif(oed_95th_percentile, digits = 5))};
 				
 			
 		}
@@ -303,7 +307,7 @@ Class.Analysis.BERAnalysis <- R6Class("Class.Analysis.BERAnalysis",
     calc_BER_stat_tbl <- self$BERData$getCalcBERStatsTable();
 		chemical_casn_list <- unique(calc_BER_stat_tbl[["casn"]]);
 		Ac50_stat_tbl <- self$basicData$getBasicStatsTable();
-		Ac50_stat_tbl<- filter(Ac50_stat_tbl, above_cutoff == "Y", ac50 >= -2, ac50 <= 10000, cytotoxicity_um > 0.01) %>% drop_na(ac50) %>% drop_na(oed);
+		Ac50_stat_tbl<- filter(Ac50_stat_tbl, above_cutoff == "Y", ac50 >= -2, ac50 <= 10000, cytotoxicity_um > 0.01) %>% drop_na(ac50);
 		
 		for(chemical_casn in chemical_casn_list){
 			
@@ -321,18 +325,21 @@ Class.Analysis.BERAnalysis <- R6Class("Class.Analysis.BERAnalysis",
 			  closest_to_95th <- absolute.min(oral_ber - theorical_95th_percentile) + theorical_95th_percentile ; #gets the closest value to the 95th percentile.
 			  
 			  # Feb 3 2020 - changes BER plot
-			  # Cap and flag BER values above 100K
+			  # Cap and flag BER values above 100K and remove zero BERs
 			  average_BER <- ifelse(is.nan(min_oed) || is.infinite(min_oed),0,min_ac50 / closest_to_95th);
 			  above_BER   <- ifelse(average_BER > 100000, 150000, 0);
 			  average_BER <- ifelse(average_BER > 100000, 100000, average_BER);
 			  
+			  if (average_BER != 0){
 			  private$tblBER <- add_row(private$tblBER, casn = chemical_casn, 
 			                            name = as.character(filter(calc_BER_stat_tbl, casn == chemical_casn) %>% select(name) %>% distinct(name)),
-			                            average_BER = signif(average_BER, digits = 5),  above_BER = above_BER) 
+			                            average_BER = signif(average_BER, digits = 5),  above_BER = above_BER)};
 			  
 			
 		}
-		private$tblBER <- private$tblBER %>% drop_na(average_BER);
+		
+		
+		
 		
 		# Feb 5 2020: sort the basic_data dataframe by BER and create a new sorted_basic_data dataframe
 		sorted_basic_data <- private$tblBER[order(as.double(private$tblBER$average_BER), decreasing = FALSE),];
