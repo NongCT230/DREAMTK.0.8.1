@@ -130,6 +130,7 @@ Class.Analysis.BERAnalysis <- R6Class("Class.Analysis.BERAnalysis",
 	      avg_oed <- mean(chemical_oed$oed);
 	      oed_95th_percentile <- quantile(chemical_oed$oed, 0.95);
 	      
+	      
 	      private$tblOEDvsAC50 <- add_row (private$tblOEDvsAC50, casn = chemical_casn, 
 	                                       name = as.character(filter(basic_data, casn == chemical_casn) %>% select(name) %>% distinct(name)),
 	                                       minAC50 = signif(min_ac50, digits = 5), minOED = signif(min_oed, digits = 5), 
@@ -141,7 +142,7 @@ Class.Analysis.BERAnalysis <- R6Class("Class.Analysis.BERAnalysis",
 
 	    private$tblOEDvsAC50 <- mutate(private$tblOEDvsAC50, ac50Rank = rank(private$tblOEDvsAC50$minAC50), oedRank = rank(private$tblOEDvsAC50$minOED), ac50_95th_rank = rank(private$tblOEDvsAC50$ac50_95th_percentile_value), oed_95th_rank = rank(private$tblOEDvsAC50$oed_95th_percentile_value));
 	    
-	    invisible(private$tblOEDvsAc50);
+	    invisible(private$tblOEDvsAC50);
 	  }
 	},
 	
@@ -160,7 +161,7 @@ Class.Analysis.BERAnalysis <- R6Class("Class.Analysis.BERAnalysis",
 	    # January 21, 2020
 	    # Added to sort the data by 25th percentile
 	    # Compute 25th percentile & create a new table for sorting
-	    tbl_basic_data <- data.frame(casn=as.character(), name=as.character(), ac50=as.numeric(), oed=as.numeric(), oed_25th=as.numeric(), stringsAsFactors = FALSE)
+	    tbl_basic_data <- data.frame(casn=as.character(), name=as.character(), ac50=as.numeric(), oed=as.numeric(), oed_25th=as.numeric(), oral_ber=as.numeric(), stringsAsFactors = FALSE)
 	    
 	    chemical_casn_list <- unique(basic_data$casn);
 	    
@@ -169,19 +170,23 @@ Class.Analysis.BERAnalysis <- R6Class("Class.Analysis.BERAnalysis",
 	      chemical_name <- filter(basic_data, casn == chemical_casn) %>% select(name);
 	      chemical_ac50 <- filter(basic_data, casn == chemical_casn) %>% select(ac50);
 	      chemical_oed <- filter(basic_data, casn == chemical_casn) %>% select(oed);
+	      chemical_BER <- filter(BER_data, casn == chemical_casn) %>% select(oral_ber);
 	      
 	      oed_25th_percentile <- 10^quantile(chemical_oed$oed)[2];
 	      
 	      numDataRows <- nrow(chemical_name);
-	      numLine <- 1
+	      numLine <- 1;
 	      
 	      while (numLine <= numDataRows) {
 	        chemName <- chemical_name$name[numLine];
 	        chemAC50 <- chemical_ac50$ac50[numLine];
 	        chemOED <- chemical_oed$oed[numLine];
-	        tbl_basic_data <- rbind (tbl_basic_data, data.frame(casn=chemical_casn, name=chemName, ac50=chemAC50, oed=chemOED, oed_25th=oed_25th_percentile))
+	        chemBER <- chemical_BER$oral_ber[numLine];
 	        
-	        numLine <- numLine + 1
+	        if(!is.na(chemAC50)){
+	        tbl_basic_data <- rbind (tbl_basic_data, data.frame(casn=chemical_casn, name=chemName, ac50=chemAC50, oed=chemOED, oral_ber= chemBER, oed_25th=oed_25th_percentile))};
+	        
+	        numLine <- numLine + 1;
 	      }
 	    }
 	    
@@ -198,7 +203,7 @@ Class.Analysis.BERAnalysis <- R6Class("Class.Analysis.BERAnalysis",
 	        #add_trace(data = BER_data, x = ~casn, y = ~signif(oral_ber, digits = 5), type = 'box', name = 'Daily Intake') %>% # horizontal plot
 	        #add_trace(data = basic_data, x = ~casn, y = ~signif(oed, digits = 5), type = 'box', name = 'Equivalent Dose') %>% # horizontal plot
 	        add_trace(data = sorted_basic_data, x = ~signif(oed, digits = 5), y = ~casn, type = 'box', name = 'Equivalent Dose') %>% # vertical plot
-	        add_trace(data = BER_data, x = ~signif(oral_ber, digits = 5), y = ~casn, type = 'box', name = 'Daily Intake') %>% # vertical plot
+	        add_trace(data = sorted_basic_data, x = ~signif(oral_ber, digits = 5), y = ~casn, type = 'box', name = 'Daily Intake') %>% # vertical plot
 	        layout(title = 'Consumer Product Exposure vs  In Vitro Tox Equivalent Dose',
 	               xaxis = list(title = "Dose - mg/kg/day", type = "log"),
 	               yaxis = list(title = "", categoryarray = ~sorted_casn, categoryorder = "array"), # use sorted_casn to plot ordred boxes
@@ -209,7 +214,7 @@ Class.Analysis.BERAnalysis <- R6Class("Class.Analysis.BERAnalysis",
 	        #add_trace(data = BER_data, x = ~name, y = ~signif(oral_ber, digits = 5), type = 'box', name = 'Daily intake') %>% # horizontal plot
 	        #add_trace(data = basic_data, x = ~name, y =~signif(oed, digits = 5), type = 'box', name = 'Equivalent Dose') %>% # horizontal plot
 	        add_trace(data = sorted_basic_data, x = ~signif(oed, digits = 5), y = ~name, type = 'box', name = 'Equivalent Dose') %>% # vertical plot
-	        add_trace(data = BER_data, x = ~signif(oral_ber, digits = 5), y = ~name, type = 'box', name = 'Daily intake') %>% # vertical plot
+	        add_trace(data = sorted_basic_data, x = ~signif(oral_ber, digits = 5), y = ~name, type = 'box', name = 'Daily intake') %>% # vertical plot
 	        layout(title = 'Consumer Product Exposure vs In Vitro Tox Equivalent Dose',
 	               xaxis = list(title = "Dose - mg/kg/day", type = "log"),
 	               yaxis = list(title = "", categoryarray = ~sorted_name, categoryorder = "array"), # use sorted_name to plot ordred boxes
@@ -252,9 +257,10 @@ Class.Analysis.BERAnalysis <- R6Class("Class.Analysis.BERAnalysis",
 	        chemName <- chemical_name$name[numLine];
 	        chemAC50 <- chemical_ac50$ac50[numLine];
 	        chemOED <- chemical_oed$oed[numLine];
-	        tbl_basic_data <- rbind (tbl_basic_data, data.frame(casn=chemical_casn, name=chemName, ac50=chemAC50, oed=chemOED, ac50_25th=ac50_25th_percentile))
 	        
-	        numLine <- numLine + 1
+	        tbl_basic_data <- rbind (tbl_basic_data, data.frame(casn=chemical_casn, name=chemName, ac50=chemAC50, oed=chemOED, ac50_25th=ac50_25th_percentile));
+	        
+	        numLine <- numLine + 1;
 	      }
 	    }
 	    
