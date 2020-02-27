@@ -1,6 +1,6 @@
 # Web UI for shiny
 
-#v0.7
+#v0.8
 
 #dashboard version
 

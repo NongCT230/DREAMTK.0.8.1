@@ -1,6 +1,6 @@
 # Server function
 
-#v0.7
+#v0.8
 
 server <- function( input, output, session ){
   options(shiny.maxRequestSize = 800 * 1024 ^ 2);

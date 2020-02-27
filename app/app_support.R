@@ -1,14 +1,14 @@
 # SERVER SUPPORT FUNCTIONS
 
-#v0.7
+#v0.8
 
 # Version number and revision
 app.version.major <- "0";
 app.version.minor <- "8";
-app.version.revision <- "0";
+app.version.revision <- "2";
 
 #num columns 
-num_plot_cols <- 1;
+num_plot_cols <- 2;
 
 # Model-related functions --------------------------------------------------
 
@@ -913,7 +913,7 @@ createToxPI2UI = function( input, output, session,
 createToxPIGroupUI = function( input, output, session,
                                basicAnalysis, numChems, id ){
   
-  num_plot_cols <- 1;
+  num_plot_cols <- 2;
   insertUI(
     selector = "#ui_stats",
     where = "beforeEnd",
